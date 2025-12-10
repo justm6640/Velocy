@@ -1,0 +1,220 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  MOVE_CARD
+}
+
+enum EntityType {
+  BOARD
+  LIST
+  CARD
+  COMMENT
+}
+
+model User {
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  firstName              String?
+  lastName               String?
+  avatarUrl              String?
+  phoneNumber            String?
+  password               String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  memberships            WorkspaceMember[]
+  cardsAssigned          Card[]
+  comments               Comment[]
+  createdCards           Card[]                  @relation("CardCreator")
+  timeEntries            TimeEntry[]
+  notificationSettings   NotificationSettings?
+}
+
+model Workspace {
+  id         String              @id @default(cuid())
+  name       String
+  slug       String              @unique
+  logoUrl    String?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  members    WorkspaceMember[]
+  boards     Board[]
+  auditLogs  AuditLog[]
+}
+
+model WorkspaceMember {
+  id           String    @id @default(cuid())
+  role         Role      @default(MEMBER)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  joinedAt     DateTime  @default(now())
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model Board {
+  id           String    @id @default(cuid())
+  title        String
+  bgImage      String?
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lists        List[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([workspaceId])
+}
+
+model List {
+  id         String   @id @default(cuid())
+  title      String
+  order      Float
+  boardId    String
+  board      Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards      Card[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([boardId])
+}
+
+model Card {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?       @db.Text
+  order         Float
+  dueDate       DateTime?
+  startDate     DateTime?
+  isCompleted   Boolean       @default(false)
+  completedAt   DateTime?
+  listId        String
+  list          List          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  creatorId     String
+  creator       User          @relation("CardCreator", fields: [creatorId], references: [id])
+  assignees     User[]
+  comments      Comment[]
+  attachments   Attachment[]
+  checklists    Checklist[]
+  labels        Label[]
+  timeEntries   TimeEntry[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([listId])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  content    String   @db.Text
+  cardId     String
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  fileName    String
+  fileUrl     String
+  fileType    String
+  cardId      String
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  uploadedAt  DateTime @default(now())
+}
+
+model Checklist {
+  id      String          @id @default(cuid())
+  title   String
+  cardId  String
+  card    Card            @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  items   ChecklistItem[]
+}
+
+model ChecklistItem {
+  id           String    @id @default(cuid())
+  content      String
+  isChecked    Boolean   @default(false)
+  checklistId  String
+  checklist    Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+}
+
+model Label {
+  id           String  @id @default(cuid())
+  name         String
+  color        String
+  boardId      String?
+  workspaceId  String?
+  cards        Card[]
+}
+
+model TimeEntry {
+  id           String    @id @default(cuid())
+  startTime    DateTime
+  endTime      DateTime?
+  duration     Int?
+  description  String?
+  cardId       String
+  card         Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  action       ActionType
+  entityType   EntityType
+  entityId     String
+  entityTitle  String
+  userId       String
+  userImage    String?
+  userName     String?
+  workspaceId  String
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+
+  @@index([entityId])
+  @@index([workspaceId])
+}
+
+model NotificationSettings {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled     Boolean  @default(true)
+  whatsappEnabled  Boolean  @default(false)
+  preferences      Json?
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  type         String
+  content      String
+  isRead       Boolean  @default(false)
+  recipientId  String
+  entityId     String?
+  createdAt    DateTime @default(now())
+}
