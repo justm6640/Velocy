@@ -1,21 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { Header } from "@/components/header";
 
 export default function Home() {
     return (
         <div className="min-h-screen bg-background text-foreground">
-            {/* Header */}
-            <header className="border-b">
-                <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
-                        Velocy
-                    </h1>
-                    <nav className="flex gap-4">
-                        <Button variant="ghost">Fonctionnalités</Button>
-                        <Button variant="ghost">Documentation</Button>
-                        <Button>Commencer</Button>
-                    </nav>
-                </div>
-            </header>
+            <Header />
 
             {/* Hero Section */}
             <section className="container mx-auto px-6 py-24 text-center">
