@@ -1,0 +1,20 @@
+{
+    "name": "@velocy/ui",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Shared UI components for Velocy SAAS platform",
+    "main": "./index.tsx",
+    "types": "./index.tsx",
+    "scripts": {
+        "lint": "echo 'No lint configured yet'"
+    },
+    "peerDependencies": {
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
+    },
+    "devDependencies": {
+        "@types/react": "^18.3.17",
+        "@types/react-dom": "^18.3.5",
+        "typescript": "^5.7.2"
+    }
+}
