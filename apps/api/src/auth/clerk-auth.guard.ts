@@ -1,7 +1,7 @@
 import {
-    Injectable,
     CanActivate,
     ExecutionContext,
+    Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
@@ -13,27 +13,26 @@ export class ClerkAuthGuard implements CanActivate {
         const authHeader = request.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            throw new UnauthorizedException('Missing or invalid authorization header');
+            throw new UnauthorizedException('Missing authorization header');
         }
 
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        const token = authHeader.split(' ')[1];
 
         try {
-            // Verify the session token using Clerk's verifyToken helper
-            const payload = await verifyToken(token, {
+            // Utilisation de la fonction autonome verifyToken
+            const claims = await verifyToken(token, {
                 secretKey: process.env.CLERK_SECRET_KEY,
             });
 
-            // Attach user information to the request
             request.user = {
-                userId: payload.sub,
-                sessionId: payload.sid,
-                claims: payload,
+                userId: claims.sub,
+                claims: claims,
             };
 
             return true;
         } catch (error) {
-            throw new UnauthorizedException('Invalid or expired token');
+            console.error('Clerk Auth Error:', error);
+            throw new UnauthorizedException('Invalid token');
         }
     }
 }
