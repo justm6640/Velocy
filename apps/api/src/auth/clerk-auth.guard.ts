@@ -4,14 +4,10 @@ import {
     ExecutionContext,
     UnauthorizedException,
 } from '@nestjs/common';
-import { createClerkClient } from '@clerk/backend';
+import { verifyToken } from '@clerk/backend';
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
-    private clerkClient = createClerkClient({
-        secretKey: process.env.CLERK_SECRET_KEY,
-    });
-
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const authHeader = request.headers.authorization;
@@ -23,16 +19,16 @@ export class ClerkAuthGuard implements CanActivate {
         const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
         try {
-            // Verify the session token
-            const sessionClaims = await this.clerkClient.verifyToken(token, {
-                jwtKey: process.env.CLERK_JWT_KEY,
+            // Verify the session token using Clerk's verifyToken helper
+            const payload = await verifyToken(token, {
+                secretKey: process.env.CLERK_SECRET_KEY,
             });
 
             // Attach user information to the request
             request.user = {
-                userId: sessionClaims.sub,
-                sessionId: sessionClaims.sid,
-                claims: sessionClaims,
+                userId: payload.sub,
+                sessionId: payload.sid,
+                claims: payload,
             };
 
             return true;
